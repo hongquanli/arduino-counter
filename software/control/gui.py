@@ -46,15 +46,8 @@ class VentDevGUI(QMainWindow):
 
 		# make connections
 		self.controlPanel.signal_logging_onoff.connect(self.waveforms.logging_onoff)
-		# self.waveforms.signal_Paw.connect(self.waveformDisplay.plotWidgets['P'].update_plot)
-		# self.waveforms.signal_Flow1.connect(self.waveformDisplay.plotWidgets['Flow 1'].update_plot)
 		self.waveforms.signal_plot1.connect(self.waveformDisplay.plotWidget[0].plot)
-		self.waveforms.signal_plot2.connect(self.waveformDisplay.plotWidget[1].plot)
-		# self.waveforms.signal_plot3.connect(self.waveformDisplay.plotWidget[2].plot)
-
 		self.waveforms.signal_ch1.connect(self.controlPanel.label_ch1.setText)
-		self.waveforms.signal_ch2.connect(self.controlPanel.label_ch2.setText)
-		# self.waveforms.signal_ch3.connect(self.controlPanel.label_ch3.setText)
 
 	def closeEvent(self, event):
 		self.waveforms.close()

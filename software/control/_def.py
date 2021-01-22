@@ -84,7 +84,7 @@ PLOTS = ['Flow 1', 'P']
 # PLOT_VARIABLES = {'Airway Pressure':'P_aw', 'Flow Rate':'Flow_rate', 'Volume':'Volume'}
 PLOT_UNITS = {'Flow 1':'L/min', 'P':'cmH2O'}
 
-SIMULATION = False    
+SIMULATION = True    
 
 
 if SIMULATION:

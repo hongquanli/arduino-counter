@@ -184,7 +184,7 @@ class WaveformDisplay(QFrame):
 		# self.setLayout(grid)
 
 		self.plotWidget = []
-		n = 2
+		n = 1
 		for i in range(n):
 			self.plotWidget.append(PlotWidget())
 		layout = QGridLayout() #layout = QStackedLayout()
