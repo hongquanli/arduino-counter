@@ -63,10 +63,9 @@ class MCU:
     flow_FS = 200
     paw_FS = 100
 
-    TIMER_PERIOD_ms = 5
     TIMEPOINT_PER_UPDATE = 50
-    DATA_INTERVAL_ms = TIMER_PERIOD_ms*TIMEPOINT_PER_UPDATE
-    RECORD_LENGTH_BYTE = 10
+    DATA_INTERVAL_ms = 20 # try to read from MCU every 20 ms
+    RECORD_LENGTH_BYTE = 4
     MSG_LENGTH = TIMEPOINT_PER_UPDATE*RECORD_LENGTH_BYTE
 
 class WAVEFORMS:
@@ -84,7 +83,7 @@ PLOTS = ['Flow 1', 'P']
 # PLOT_VARIABLES = {'Airway Pressure':'P_aw', 'Flow Rate':'Flow_rate', 'Volume':'Volume'}
 PLOT_UNITS = {'Flow 1':'L/min', 'P':'cmH2O'}
 
-SIMULATION = True    
+SIMULATION = False    
 
 
 if SIMULATION:

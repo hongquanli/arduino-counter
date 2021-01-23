@@ -1,16 +1,12 @@
-#include "pwm_lib.h"
-/***************************************************************************************************/
-/********************************************* Parameters ******************************************/
-/***************************************************************************************************/
 static const bool USE_SERIAL_MONITOR = false; // for debug
-static const int MSG_LENGTH = 100*4; // transmit 100 time points at a time
+static const int MSG_LENGTH = 50*4; // transmit 50 time points at a time
 
 byte buffer_tx[MSG_LENGTH];
 volatile int buffer_tx_ptr;
 
 volatile bool flag_log_data = false;
 
-static const bool pin_measure = 2;
+static const int pin_measure = 2;
 volatile uint32_t timestamp = 0; // in number of TIMER_PERIOD_us
 
 /***************************************************************************************************/
@@ -22,11 +18,10 @@ void setup()
   // Initialize Native USB port
   SerialUSB.begin(2000000);
   while (!SerialUSB);           // Wait until connection is established
-
-  pinMode(pin_measure,INPUT);
-  delayMicroseconds(500000);
+  buffer_tx_ptr = 0;
+  pinMode(pin_measure,INPUT_PULLUP);  
+  attachInterrupt(digitalPinToInterrupt(pin_measure), on_rising_edge, RISING); // this does not work
   
-  attachInterrupt(digitalPinToInterrupt(pin_measure), on_rising_edge, RISING);
 }
 
 /***************************************************************************************************/
@@ -65,20 +60,4 @@ void loop()
     }
   }
   
-}
-
-/***************************************************************************************************/
-/*********************************************  utils  *********************************************/
-/***************************************************************************************************/
-static inline int sgn(int val) 
-{
-  if (val < 0) return -1;
-  if (val == 0) return 0;
-  return 1;
-}
-
-long signed2NBytesUnsigned(long signedLong, int N)
-{
-  long NBytesUnsigned = signedLong + pow(256L, N) / 2;
-  return NBytesUnsigned;
 }

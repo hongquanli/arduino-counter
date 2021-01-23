@@ -30,6 +30,7 @@ class Waveforms(QObject):
         self.microcontroller = microcontroller
         self.ch1 = 0
         self.time = 0
+        self.timestamp = 0 # MCU timestamp, in microsecond
         self.ch1_array = np.array([])
         self.time_array = np.array([])
         self.signal_array = np.array([])
@@ -39,11 +40,9 @@ class Waveforms(QObject):
         self.timer_update_waveform.start()
 
         self.first_run = True
-        self.time_ticks_start = 0
 
         self.time_now = 0
-        self.time_diff = 0
-        self.time_prev = time.time()
+        self.time_0 = time.time()
 
         self.counter_display = 0
         self.counter_file_flush = 0
@@ -69,10 +68,7 @@ class Waveforms(QObject):
 
             for i in range(MCU.TIMEPOINT_PER_UPDATE):
                 # Use the processor clock to determine elapsed time since last function call
-                self.time_now = time.time()
-                self.time_diff = self.time_now - self.time_prev
-                self.time_prev = self.time_now
-                self.time += self.time_diff
+                self.time = time.time() - self.time_0
                 self.ch1 = (self.ch1 + 0.2/MCU.TIMEPOINT_PER_UPDATE)%5
 
                 # append variables for plotting
@@ -82,10 +78,7 @@ class Waveforms(QObject):
             self.time_array = np.append(self.time_array,t_chunck)
             self.ch1_array = np.append(self.ch1_array,ch1_chunck)
 
-            # self.signal_plot1.emit(t_chunck,ch1_chunck)
-
-            self.signal_plot1.emit(self.time_array[-2000:],self.ch1_array[-2000:])
-            # self.signal_plot1.emit(np.array([self.time]),np.array([self.ch1]))
+            self.signal_plot1.emit(self.time_array[-500:],self.ch1_array[-500:])
             self.signal_ch1.emit("{:.2f}".format(self.ch1))
 
 
@@ -93,10 +86,6 @@ class Waveforms(QObject):
             readout = self.microcontroller.read_received_packet_nowait()
             if readout is not None:
 
-                # self.time_now = time.time()
-                # self.time_diff = self.time_now - self.time_prev
-                # self.time_prev = self.time_now
-                # self.time += self.time_diff
                 self.time_now = time.time()
 
                 t_chunck = np.array([])
@@ -104,26 +93,26 @@ class Waveforms(QObject):
 
                 for i in range(MCU.TIMEPOINT_PER_UPDATE):
                     # time
-                    self.time_ticks = int.from_bytes(readout[i*MCU.RECORD_LENGTH_BYTE:i*MCU.RECORD_LENGTH_BYTE+4], byteorder='big', signed=False)
+                    timestamp_previous = self.timestamp
+                    self.timestamp = int.from_bytes(readout[i*MCU.RECORD_LENGTH_BYTE:i*MCU.RECORD_LENGTH_BYTE+4], byteorder='big', signed=False)
                     if self.first_run:
-                        self.time_ticks_start = self.time_ticks
+                        self.timestamp_start = self.timestamp
                         self.first_run = False
-                    self.time = (self.time_ticks - self.time_ticks_start)*MCU.TIMER_PERIOD_ms/1000
-                    self.ch1 = utils.unsigned_to_unsigned(readout[i*MCU.RECORD_LENGTH_BYTE+4:i*MCU.RECORD_LENGTH_BYTE+6],4)
-                    # the raw reading is microsecond, now convert to Hz
-                    self.ch1 = 1/(self.ch1*1e-6)
+                    else:
+                        self.time = (self.timestamp - self.timestamp_start)*1e-6
+                        self.ch1 = 1/((self.timestamp - timestamp_previous)*1e-6) # frequency in Hz
 
-                    record_from_MCU = (
-                        str(self.time_ticks) + '\t' + str(self.ch1) + '\t' )
-                    record_settings = (str(self.time_now))
-                   
-                    # saved variables
-                    if self.logging_is_on:
-                        self.file.write(record_from_MCU + '\t' + record_settings + '\n')
+                        record_from_MCU = (
+                            str(self.time) + '\t' + str(self.ch1) + '\t' )
+                        record_settings = (str(self.time_now))
+                       
+                        # saved variables
+                        if self.logging_is_on:
+                            self.file.write(record_from_MCU + '\t' + record_settings + '\n')
 
-                    # append variables for plotting
-                    t_chunck = np.append(t_chunck,self.time)
-                    ch1_chunck = np.append(ch1_chunck,self.ch1)
+                        # append variables for plotting
+                        t_chunck = np.append(t_chunck,self.time)
+                        ch1_chunck = np.append(ch1_chunck,self.ch1)
 
                 self.ch1_array = np.append(self.ch1_array,ch1_chunck)
                 self.time_array = np.append(self.time_array,t_chunck)
@@ -132,7 +121,7 @@ class Waveforms(QObject):
                 self.counter_display = self.counter_display + 1
                 if self.counter_display>=1:
                     self.counter_display = 0
-                    self.signal_plot1.emit(self.time_array,self.ch1_array)
+                    self.signal_plot1.emit(self.time_array[-500:],self.ch1_array[-500:])
                     self.signal_ch1.emit("{:.2f}".format(self.ch1))
 
         # file flushing
