@@ -26,7 +26,7 @@ class Waveforms(QObject):
     def __init__(self,microcontroller):
         QObject.__init__(self)
         self.file = open(str(Path.home()) + "/Downloads/" + datetime.now().strftime('%Y-%m-%d %H-%M-%-S.%f') + ".csv", "w+")
-        # self.file.write('Time (s),Paw (cmH2O),Flow (l/min),Volume (ml),Vt (ml),Ti (s),RR (/min),PEEP (cmH2O)\n')
+        # self.file.write('Time,Frequency (Hz)')
         self.microcontroller = microcontroller
         self.ch1 = 0
         self.time = 0
@@ -66,7 +66,6 @@ class Waveforms(QObject):
             #for i in range(MCU.TIMEPOINT_PER_UPDATE):
             t_chunck = np.array([])
             ch1_chunck = np.array([])
-            ch2_chunck = np.array([])
 
             for i in range(MCU.TIMEPOINT_PER_UPDATE):
                 # Use the processor clock to determine elapsed time since last function call
@@ -110,10 +109,12 @@ class Waveforms(QObject):
                         self.time_ticks_start = self.time_ticks
                         self.first_run = False
                     self.time = (self.time_ticks - self.time_ticks_start)*MCU.TIMER_PERIOD_ms/1000
-                    self.ch1 = utils.unsigned_to_unsigned(readout[i*MCU.RECORD_LENGTH_BYTE+4:i*MCU.RECORD_LENGTH_BYTE+6],2)
+                    self.ch1 = utils.unsigned_to_unsigned(readout[i*MCU.RECORD_LENGTH_BYTE+4:i*MCU.RECORD_LENGTH_BYTE+6],4)
+                    # the raw reading is microsecond, now convert to Hz
+                    self.ch1 = 1/(self.ch1*1e-6)
 
                     record_from_MCU = (
-                        str(self.time_ticks) + '\t' + str(self.ch1) + '\t' + "{:.2f}".format(self.ch2) + '\t' + "{:.2f}".format(self.temp1) + '\t' + "{:.2f}".format(self.temp2) )
+                        str(self.time_ticks) + '\t' + str(self.ch1) + '\t' )
                     record_settings = (str(self.time_now))
                    
                     # saved variables
@@ -131,17 +132,6 @@ class Waveforms(QObject):
                 self.counter_display = self.counter_display + 1
                 if self.counter_display>=1:
                     self.counter_display = 0
-                    # self.signal_plot1.emit(self.t_chunck,self.ch1_chunck)
-                    # self.signal_plot2.emit(self.t_chunck,self.ch1_chunck)
-
-                    # self.signal_plot1.emit(self.time_array,self.ch1_array)
-                    # self.signal_plot2.emit(self.time_array,self.ch2_array)
-                    # self.signal_plot3.emit(self.time_array,self.ch3_array)
-
-                    # self.signal_ch1.emit("{:.2f}".format(self.ch1))
-                    # self.signal_ch2.emit("{:.2f}".format(self.ch2))
-                    # self.signal_ch3.emit("{:.2f}".format(self.ch3))
-
                     self.signal_plot1.emit(self.time_array,self.ch1_array)
                     self.signal_ch1.emit("{:.2f}".format(self.ch1))
 
